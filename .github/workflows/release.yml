@@ -1,0 +1,72 @@
+# Publishes to PyPI with Trusted Publishing: PyPI trusts this workflow through its
+# OIDC identity, so no token is stored in the repo's secrets.
+# A leaked token publishes any version from anywhere; an OIDC identity is only
+# valid for this repo, this workflow and this environment.
+#
+# The trigger is a PUBLISHED release, not a tag push. A tag gets pushed by accident;
+# publishing a release is a deliberate act with a button press in between.
+name: release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Build and validate without publishing"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - name: Install build tooling
+        run: python -m pip install --upgrade pip build twine
+
+      - name: Build
+        run: python -m build
+
+      # The tag takes precedence over what the file says: if `pyproject.toml` is still at
+      # 0.8.0 and the release is called v0.9.0, PyPI keeps 0.8.0 forever
+      # and that version can never be uploaded again. Better to fail here.
+      - name: Tag matches version
+        if: github.event_name == 'release'
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          VER=$(python -c "import tomllib;print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          echo "tag=$TAG  pyproject=$VER"
+          test "$TAG" = "$VER" || { echo "::error::tag $TAG does not match version $VER in pyproject.toml"; exit 1; }
+
+      - name: Check metadata
+        run: python -m twine check dist/*
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      # The only thing Trusted Publishing needs. No secrets.
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v6
+        with:
+          name: dist
+          path: dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1

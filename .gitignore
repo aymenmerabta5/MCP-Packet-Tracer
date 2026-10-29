@@ -1,0 +1,66 @@
+# Python cache — matches in ALL subdirectories
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Tests & coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Build & packaging
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# EXTENSION/script-engine: only main.js is our own code (bridge, token,
+# installMcpHelpers). The rest are reference copies of PTBuilder's script engine
+# (kimmknight/PTBuilder, credited in the README) — not redistributed here.
+EXTENSION/script-engine/*.js
+!EXTENSION/script-engine/main.js
+
+# macOS
+.DS_Store
+
+
+# Generated runtime artifacts
+data/
+tmp/
+
+CLAUDE.md
+# Project exports / generated topology artifacts (runtime output, not source)
+projects/
+output/
+
+# Tooling
+.claude/
+.vscode/settings.json
+*.log
+
+# Large demo media (README embeds the GIF; keep heavy video out of git)
+demo/*.mp4
+
+# MkDocs build output
+site/
+_site/
+
+pt_union.txt
+
+# Smoke-test / UI-mode screenshots
+/screenshots/
+/tempimages/
+
+# Local agent working files: plans, status, scratch and smoke harness (not part of the project)
+/PLAN.md
+/STATUS.md
+/HANDOFF.md
+/.dev/
+/.superpowers/
+/screenshots_*/
